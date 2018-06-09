@@ -3,6 +3,8 @@ package red.man10.man10vaultapiplus;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.UUID;
 
 public class MoneyPoolObject {
@@ -27,5 +29,13 @@ public class MoneyPoolObject {
 
     public MoneyPoolObject(long id){
         mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id  +"' ORDER BY DESC LIMIT 1");
+        try {
+            while(rs.next()){
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

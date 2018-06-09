@@ -1,4 +1,4 @@
-package red.man10.man10vaultapiplus;
+package man10vaultapi.vaultapi;
 
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -31,6 +31,7 @@ public class VaultAPI {
             return false;
         }
         economy = rsp.getProvider();
+        Bukkit.getLogger().info("Economy setup");
         return economy != null;
     }
 
@@ -47,7 +48,7 @@ public class VaultAPI {
     public void showBalance(UUID uuid){
         OfflinePlayer p = Bukkit.getOfflinePlayer(uuid).getPlayer();
         double money = getBalance(uuid);
-        p.getPlayer().sendMessage(ChatColor.YELLOW + "あなたの所持金は$" + (int)money);
+        p.getPlayer().sendMessage(ChatColor.YELLOW + "あなたの所持金は$" + money);
     }
     /////////////////////////////////////
     //      引き出し
@@ -61,7 +62,7 @@ public class VaultAPI {
         EconomyResponse resp = economy.withdrawPlayer(p,money);
         if(resp.transactionSuccess()){
             if(p.isOnline()) {
-                p.getPlayer().sendMessage(ChatColor.YELLOW + "$" + (int) money + "支払いました");
+                p.getPlayer().sendMessage(ChatColor.YELLOW + "$" + money + "支払いました");
             }
             return true;
         }
@@ -80,11 +81,77 @@ public class VaultAPI {
         EconomyResponse resp = economy.depositPlayer(p,money);
         if(resp.transactionSuccess()){
             if(p.isOnline()){
-                p.getPlayer().sendMessage(ChatColor.YELLOW + "$"+(int)money+"受取りました");
+                p.getPlayer().sendMessage(ChatColor.YELLOW + "$"+money+"受取りました");
             }
             return true;
         }
 
         return  false;
+    }
+
+    /////////////////////////////////////
+    //      引き出し
+    /////////////////////////////////////
+    public Boolean  silentWithdraw(UUID uuid, double money){
+        OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
+        if(p == null){
+            Bukkit.getLogger().info(uuid.toString()+"は見つからない");
+            return false;
+        }
+        EconomyResponse resp = economy.withdrawPlayer(p,money);
+        if(resp.transactionSuccess()){
+            return true;
+        }
+        return  false;
+    }
+    /////////////////////////////////////
+    //      お金を入れる
+    /////////////////////////////////////
+    public Boolean  silentDeposit(UUID uuid,double money){
+        OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
+        if(p == null){
+            Bukkit.getLogger().info(uuid.toString()+"は見つからない");
+
+            return false;
+        }
+        EconomyResponse resp = economy.depositPlayer(p,money);
+        if(resp.transactionSuccess()){
+            return true;
+        }
+        return  false;
+    }
+
+
+    public String complexJpyBalForm(Long val){
+        if(val < 10000){
+            return String.valueOf(val);
+        }
+        if(val < 100000000){
+            long man = val/10000;
+            String left = String.valueOf(val).substring(String.valueOf(val).length() - 4);
+            if(Long.parseLong(left) == 0){
+                return man + "万";
+            }
+            return man + "万" + Long.parseLong(left);
+        }
+        if(val < 100000000000L){
+            long oku = val/100000000;
+            String man = String.valueOf(val).substring(String.valueOf(val).length() - 8);
+            String te = man.substring(0, 4);
+            String left = String.valueOf(val).substring(String.valueOf(val).length() - 4);
+            if(Long.parseLong(te)  == 0){
+                if( Long.parseLong(left) == 0){
+                    return oku + "億";
+                }else{
+                    return oku + "億"+ Long.parseLong(left);
+                }
+            }else{
+                if( Long.parseLong(left) == 0){
+                    return oku + "億" + Long.parseLong(te) + "万";
+                }
+            }
+            return oku + "億" + Long.parseLong(te) + "万" + Long.parseLong(left);
+        }
+        return "Null";
     }
 }
