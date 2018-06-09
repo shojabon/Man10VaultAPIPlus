@@ -13,7 +13,7 @@ public class MoneyPoolObject {
 
     boolean wired;
     UUID wiredUuid;
-    String name;
+    String wiredName;
 
     double value;
     String plugin;
@@ -32,8 +32,20 @@ public class MoneyPoolObject {
         ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id  +"' ORDER BY DESC LIMIT 1");
         try {
             while(rs.next()){
+                id = rs.getLong("id");
+                term = MoneyPoolTerm.valueOf(rs.getString("term"));
+                wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
+                wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
+                wiredName = rs.getString("wired_name");
 
+                value = rs.getDouble("balance");
+                plugin = rs.getString("plugin");
+                pId = rs.getLong("plugin_id");
+                memo = rs.getString("memo");
+                frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
             }
+            rs.close();
+            mysql.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
