@@ -15,3 +15,37 @@ enum MoneyPoolType{
     UNKNOWN,
 }
 
+enum TransactionCategory{
+    UNKNOWN,
+    GENERAL,
+    SHOP,
+    GAMBLE,
+    REPOSITORY_NOTE,
+    TAX,
+    MARKET,
+    GAME
+}
+
+enum TransactionType{
+    MEMORY_TRANSFER,
+    UNKNOWN,
+    PAY,
+    TRADE,
+    BUY,
+    SELL,
+    FEE,
+    BET,
+    WIN,
+    SEND_CHEQUE,
+    REDEEM_CHEQUE,
+    LEND,
+    COLLECT,
+    RECIVE,
+}
+
+enum TransactionLogType{
+    RESULT,
+    RAW,
+    BOTH
+}
+

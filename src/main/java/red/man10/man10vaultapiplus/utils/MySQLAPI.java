@@ -52,9 +52,6 @@ public class MySQLAPI {
 
         this.connected = Connect(HOST, DB, USER, PASS, PORT);
 
-        if (!this.connected) {
-            plugin.getLogger().info("Unable to establish a MySQL connection.");
-        }
     }
 
     public MySQLAPI(String conName,String host,String user,String pass,String port,String db){
@@ -67,23 +64,18 @@ public class MySQLAPI {
         DB = db;
         this.connected = Connect(host,db,user,pass,port);
 
-        if (!this.connected) {
-            Bukkit.getLogger().info("Unable to establish a MySQL connection.");
-        }
     }
 
     /////////////////////////////////
     //       設定ファイル読み込み
     /////////////////////////////////
     public void loadConfig() {
-        plugin.getLogger().info("MYSQL Config loading");
         plugin.reloadConfig();
         HOST = plugin.getConfig().getString("mysql.host");
         USER = plugin.getConfig().getString("mysql.user");
         PASS = plugin.getConfig().getString("mysql.pass");
         PORT = plugin.getConfig().getString("mysql.port");
         DB = plugin.getConfig().getString("mysql.db");
-        plugin.getLogger().info("Config loaded");
     }
 
     public boolean connectable(){
@@ -107,16 +99,13 @@ public class MySQLAPI {
         this.MySQL = new MySQLFunc(host, db, user, pass,port);
         this.con = this.MySQL.open();
         if(this.con == null){
-            Bukkit.getLogger().info("failed to open MYSQL");
             return false;
         }
         try {
             this.st = this.con.createStatement();
             this.connected = true;
-            Bukkit.getLogger().info("[" + this.conName + "] Connected to the database.");
         } catch (SQLException var6) {
             this.connected = false;
-            Bukkit.getLogger().info("[" + this.conName + "] Could not connect to the database.");
         }
         //this.MySQL.close(this.con);
         try {
@@ -145,7 +134,6 @@ public class MySQLAPI {
                 ++count;
             }
         } catch (SQLException var5) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not select all rows from table: " + table + ", error: " + var5.getErrorCode());
         }
 
         return count;
@@ -162,7 +150,6 @@ public class MySQLAPI {
             count = set.getInt("count(*)");
 
         } catch (SQLException var5) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not select all rows from table: " + table + ", error: " + var5.getErrorCode());
             return -1;
         }
 
@@ -198,18 +185,14 @@ public class MySQLAPI {
         MySQL = new MySQLFunc(HOST, DB, USER, PASS,PORT);
         con = MySQL.open();
         if (con == null) {
-            Bukkit.getLogger().info("failed to open MYSQL");
             return false;
         }
         if (debugMode) {
-            plugin.getLogger().info("query:" + query);
         }
         try {
             st = con.createStatement();
             st.execute(query);
         } catch (SQLException var3) {
-            plugin.getLogger().info("[" + conName + "] Error executing statement: " + var3.getErrorCode() + ":" + var3.getLocalizedMessage());
-            plugin.getLogger().info(query);
             result = false;
         }
         this.MySQL.close(this.con);
@@ -227,15 +210,12 @@ public class MySQLAPI {
         MySQL = new MySQLFunc(HOST, DB, USER, PASS, PORT);
         con = MySQL.open();
         if (debugMode) {
-            Bukkit.getLogger().info("query:" + query);
         }
         try {
             st = con.createStatement();
             st.setQueryTimeout(10);
             rs = st.executeQuery(query);
         } catch (SQLException var4) {
-            Bukkit.getLogger().info("[" + conName + "] Error executing query: " + var4.getErrorCode());
-            plugin.getLogger().info(query);
         }
         return rs;
     }

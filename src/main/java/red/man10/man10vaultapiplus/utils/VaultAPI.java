@@ -39,7 +39,11 @@ public class VaultAPI {
     //      残高確認
     /////////////////////////////////////
     public double  getBalance(UUID uuid){
-        return economy.getBalance(Bukkit.getOfflinePlayer(uuid).getPlayer());
+        return economy.getBalance(Bukkit.getOfflinePlayer(uuid));
+    }
+
+    public double  getBalance(OfflinePlayer p){
+        return economy.getBalance(p);
     }
 
     /////////////////////////////////////
@@ -115,6 +119,22 @@ public class VaultAPI {
             return false;
         }
         EconomyResponse resp = economy.depositPlayer(p,money);
+        if(resp.transactionSuccess()){
+            return true;
+        }
+        return  false;
+    }
+
+    public Boolean silentDeposit(OfflinePlayer p, double money){
+        EconomyResponse resp = economy.depositPlayer(p,money);
+        if(resp.transactionSuccess()){
+            return true;
+        }
+        return  false;
+    }
+
+    public Boolean silentWithdraw(OfflinePlayer p, double money){
+        EconomyResponse resp = economy.withdrawPlayer(p,money);
         if(resp.transactionSuccess()){
             return true;
         }
