@@ -1,4 +1,4 @@
-package man10vaultapi.vaultapi;
+package red.man10.man10vaultapiplus.utils;
 
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;

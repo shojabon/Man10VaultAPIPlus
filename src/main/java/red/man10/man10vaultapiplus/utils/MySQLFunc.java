@@ -1,4 +1,4 @@
-package red.man10.man10vaultapiplus;
+package red.man10.man10vaultapiplus.utils;
 
 /**
  * Created by takatronix on 2017/03/05.

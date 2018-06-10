@@ -1,6 +1,7 @@
 package red.man10.man10vaultapiplus;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import red.man10.man10vaultapiplus.utils.MySQLAPI;
 
 public final class Man10VaultAPIPlus extends JavaPlugin {
 

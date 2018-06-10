@@ -1,4 +1,4 @@
-package red.man10.man10vaultapiplus;
+package red.man10.man10vaultapiplus.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
