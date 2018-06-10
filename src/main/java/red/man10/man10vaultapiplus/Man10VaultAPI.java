@@ -15,7 +15,7 @@ public class Man10VaultAPI {
     String pluginName;
 
     public Man10VaultAPI(String pluginName){
-        mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");;
+        mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
         vault = new VaultAPI();
         this.pluginName = pluginName;
     }
@@ -168,6 +168,20 @@ public class Man10VaultAPI {
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, from.getName(), uuidFrom, "CTS POOL:" + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
         return a;
+    }
+
+    public int transferMoneyPoolToPlayer(long poolId, UUID uuidTo, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
+        OfflinePlayer to = Bukkit.getOfflinePlayer(uuidTo);
+        MoneyPoolObject pool = new MoneyPoolObject(poolId);
+        if(transactionCategory == null){
+            transactionCategory = TransactionCategory.UNKNOWN;
+        }
+        if(transactionType == null){
+            transactionType = TransactionType.UNKNOWN;
+        }
+        if(memo == null){
+            memo = "";
+        }
     }
 
 
