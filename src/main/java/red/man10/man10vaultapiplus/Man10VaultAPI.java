@@ -182,6 +182,33 @@ public class Man10VaultAPI {
         if(memo == null){
             memo = "";
         }
+        if (to == null){
+            return -2;
+        }
+        if(!pool.isAvailable()){
+            return -1;
+        }
+        double fromOldBalance = pool.getBalance();
+        double toOldBalance = vault.getBalance(to);
+        if(fromOldBalance < value){
+            return -3;
+        }
+        boolean toS = vault.silentDeposit(to, value);
+        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
+        if(!fromS || !toS){
+            if(toS){
+                vault.silentWithdraw(to, value);
+            }
+            if(fromS){
+                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
+            }
+            return -4;
+        }
+        double fromNewBalance = fromOldBalance - value;
+        double toNewBalance = toOldBalance + value;
+        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, "POOL:" + pool.getId(), null, to.getName() , to.getUniqueId(), fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        return a;
+
     }
 
 
