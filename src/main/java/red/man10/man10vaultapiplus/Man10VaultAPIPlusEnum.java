@@ -17,6 +17,7 @@ enum MoneyPoolType{
 
 enum TransactionCategory{
     UNKNOWN,
+    VOID,
     GENERAL,
     SHOP,
     GAMBLE,
