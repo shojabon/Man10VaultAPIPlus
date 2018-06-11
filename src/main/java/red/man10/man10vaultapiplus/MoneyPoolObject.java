@@ -2,6 +2,7 @@ package red.man10.man10vaultapiplus;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import red.man10.man10vaultapiplus.utils.Man10VaultExeption;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
 
 import java.sql.ResultSet;
@@ -84,6 +85,31 @@ public class MoneyPoolObject {
         return idd;
     }
 
+    public MoneyPoolObject(String pluginName, UUID wiredUuid, int pid, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo){
+        if(wiredUuid == null){
+            try {
+                throw new Man10VaultExeption("Wired UUID Not Defined");
+            } catch (Man10VaultExeption man10VaultExeption) {
+                man10VaultExeption.printStackTrace();
+            }
+        }
+        mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        ResultSet rs = mysql.query("SELECT count(*) FROM man10_moneypool WHERE wired_uuid ='" + wiredUuid + "' AND plugin_id ='" + pid + "' AND plugin = '" + pluginName + "'");
+        try{
+            int i = 0;
+            while(rs.next()){
+                i = rs.getInt("count(*)");
+            }
+            rs.close();
+            mysql.close();
+            if(i <= 0){
+                long res = createNewMoneyPool(pid, moneyPoolTerm, moneyPoolType, true, wiredUuid, Bukkit.getOfflinePlayer(wiredUuid).getName(), pluginName, memo);
+            }
+        }catch(SQLException e){
+
+        }
+    }
+
 
     public MoneyPoolObject(long id) {
         mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
@@ -127,9 +153,7 @@ public class MoneyPoolObject {
                     rs.close();
                     mysql.close();
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (NullPointerException e) {
+            } catch (SQLException | NullPointerException e) {
                 this.available = false;
             }
         }
