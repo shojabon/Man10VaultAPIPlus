@@ -141,7 +141,7 @@ public class Man10VaultAPI {
         }
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
-        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, from.getName(), uuidFrom, "POOL:" + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
         return a;
     }
 
@@ -166,13 +166,13 @@ public class Man10VaultAPI {
         }
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
-        int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, from.getName(), uuidFrom, "CTS POOL:" + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
         return a;
     }
 
-    public int transferMoneyPoolToPlayer(long poolId, UUID uuidTo, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
+    public int transferMoneyPoolToPlayer(long fromPoolId, UUID uuidTo, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
         OfflinePlayer to = Bukkit.getOfflinePlayer(uuidTo);
-        MoneyPoolObject pool = new MoneyPoolObject(poolId);
+        MoneyPoolObject pool = new MoneyPoolObject(fromPoolId);
         if(transactionCategory == null){
             transactionCategory = TransactionCategory.UNKNOWN;
         }
@@ -206,10 +206,94 @@ public class Man10VaultAPI {
         }
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
-        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, "POOL:" + pool.getId(), null, to.getName() , to.getUniqueId(), fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() , to.getUniqueId(), fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
         return a;
-
     }
+
+    public int transferMoneyPoolToCountry(long fromPoolId, double value, String memo){
+        MoneyPoolObject to = new MoneyPoolObject(1);
+        MoneyPoolObject pool = new MoneyPoolObject(fromPoolId);
+        if(memo == null){
+            memo = "";
+        }
+        if (!to.isAvailable()){
+            return -2;
+        }
+        if(!pool.isAvailable()){
+            return -1;
+        }
+        double fromOldBalance = pool.getBalance();
+        double toOldBalance = to.getBalance();
+        if(fromOldBalance < value){
+            return -3;
+        }
+        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
+        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
+        if(!fromS || !toS){
+            if(toS){
+                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + to.getId() + "'");
+            }
+            if(fromS){
+                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
+            }
+            return -4;
+        }
+        double fromNewBalance = fromOldBalance - value;
+        double toNewBalance = toOldBalance + value;
+        int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        return a;
+    }
+
+    public int transferMoneyPoolToPool(long fromPoolId, long toPoolId, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
+        MoneyPoolObject to = new MoneyPoolObject(toPoolId);
+        MoneyPoolObject pool = new MoneyPoolObject(fromPoolId);
+        if(transactionCategory == null){
+            transactionCategory = TransactionCategory.UNKNOWN;
+        }
+        if(transactionType == null){
+            transactionType = TransactionType.UNKNOWN;
+        }
+        if(memo == null){
+            memo = "";
+        }
+        if (!to.isAvailable()){
+            return -2;
+        }
+        if(!pool.isAvailable()){
+            return -1;
+        }
+        double fromOldBalance = pool.getBalance();
+        double toOldBalance = to.getBalance();
+        if(fromOldBalance < value){
+            return -3;
+        }
+        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
+        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
+        if(!fromS || !toS){
+            if(toS){
+                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + to.getId() + "'");
+            }
+            if(fromS){
+                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
+            }
+            return -4;
+        }
+        double fromNewBalance = fromOldBalance - value;
+        double toNewBalance = toOldBalance + value;
+        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
+        return a;
+    }
+
+    public int transferMoneyCountryToPlayer(UUID uuidTo, double value, String memo){
+        return transferMoneyPoolToPlayer(1, uuidTo, value, TransactionCategory.TAX, TransactionType.RECIVE, memo);
+    }
+
+    public int transferMoneyCountryToPool(long toPoolId, double value, String memo){
+        return transferMoneyPoolToPool(1, toPoolId, value, TransactionCategory.TAX, TransactionType.RECIVE, memo);
+    }
+
+
+
 
 
 

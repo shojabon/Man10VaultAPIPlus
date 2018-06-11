@@ -148,5 +148,12 @@ public class MoneyPoolObject {
         return this.id;
     }
 
+    public String getName(){
+        if(getId() == 1){
+            return "CTS POOL:";
+        }
+        return "POOL:";
+    }
+
 
 }
