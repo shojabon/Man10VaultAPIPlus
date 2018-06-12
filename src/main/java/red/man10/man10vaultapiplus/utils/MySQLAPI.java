@@ -7,7 +7,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.concurrent.*;
 
 /**
  * Created by sho-pc on 2017/05/21.
@@ -79,13 +79,7 @@ public class MySQLAPI {
     }
 
     public boolean connectable(){
-        this.connected = false;
-        this.connected = Connect(HOST, DB, USER, PASS, PORT);
-        if(!this.connected){
-            return false;
-        }
-        this.connected = true;
-        return true;
+        return this.connected;
     }
 
     ////////////////////////////////
@@ -181,24 +175,33 @@ public class MySQLAPI {
     }
 
     public boolean execute(String query) {
-        boolean result = true;
-        MySQL = new MySQLFunc(HOST, DB, USER, PASS,PORT);
-        con = MySQL.open();
-        if (con == null) {
+        MySQLFunc mysql = new MySQLFunc(this.HOST, this.DB, this.USER, this.PASS,this.PORT);
+        Connection con = mysql.open();
+        if(con == null){
+            Bukkit.getLogger().info("failed to open MYSQL");
             return false;
         }
-        if (debugMode) {
-        }
+        boolean ret = true;
         try {
-            st = con.createStatement();
+            Statement st = con.createStatement();
             st.execute(query);
+            st.close();
+            st = null;
+            con.close();
+            con = null;
         } catch (SQLException var3) {
-            result = false;
+            ret = false;
         }
-        this.MySQL.close(this.con);
-        close();
-        return result;
+        return ret;
     }
+
+    public void executeThread(String query){
+        Runnable r = () -> execute(query);
+        Thread t = new Thread(r);
+        t.start();
+    }
+
+
 
     ////////////////////////////////
     //      クエリ
@@ -220,21 +223,20 @@ public class MySQLAPI {
         return rs;
     }
 
-    public void close() {
-        this.MySQL.close(this.con);
+    public void close(){
+
         try {
-            if(!st.isClosed()){
-                st.close();
-                st = null;
+            if(this.st != null){
+                this.st.close();
+                this.st = null;
             }
-            if(!con.isClosed()){
-                con.close();
-                con = null;
+            if(this.con != null){
+                this.con.close();
+                this.con = null;
             }
-        } catch (SQLException e) {
-        } catch (Exception e){
-        }finally {
+        } catch (SQLException var4) {
         }
+
     }
 
 

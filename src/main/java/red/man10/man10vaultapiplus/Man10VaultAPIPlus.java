@@ -15,7 +15,7 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
         // Plugin startup logic
         this.saveDefaultConfig();
         mysql = new MySQLAPI(this, "Man10VaultAPIPlus");
-        vault = new Man10VaultAPI("SampleVaultPlus");
+        vault = new Man10VaultAPI("Man10VaultAPIPlus");
         original = new VaultAPI();
     }
 
@@ -32,7 +32,12 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(command.getName().equalsIgnoreCase("test")){
             Player p = (Player) sender;
-            int res = vault.transferMoneyPlayerToCountry(p.getUniqueId(), 100, "Sample Pool Transaction");
+            long a = System.currentTimeMillis();
+            for(int i = 0;i < 100;i++){
+                vault.takePlayerMoney(p.getUniqueId(), 1, null);
+            }
+            long b = System.currentTimeMillis();
+            Bukkit.broadcastMessage(String.valueOf(b - a));
         }
         return true;
     }

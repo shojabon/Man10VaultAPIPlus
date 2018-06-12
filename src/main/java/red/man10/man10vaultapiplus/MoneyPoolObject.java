@@ -2,7 +2,6 @@ package red.man10.man10vaultapiplus;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import red.man10.man10vaultapiplus.utils.Man10VaultExeption;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
 
 import java.sql.ResultSet;
@@ -85,31 +84,53 @@ public class MoneyPoolObject {
         return idd;
     }
 
-    public MoneyPoolObject(String pluginName, UUID wiredUuid, int pid, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo){
-        if(wiredUuid == null){
+    public MoneyPoolObject(String pluginName, UUID wiredUuid, int pId, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo) {
+        boolean error = false;
+        if(wiredUuid == null) {
             try {
                 throw new Man10VaultExeption("Wired UUID Not Defined");
             } catch (Man10VaultExeption man10VaultExeption) {
                 man10VaultExeption.printStackTrace();
+                error = true;
+                this.available = false;
             }
         }
-        mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
-        ResultSet rs = mysql.query("SELECT count(*) FROM man10_moneypool WHERE wired_uuid ='" + wiredUuid + "' AND plugin_id ='" + pid + "' AND plugin = '" + pluginName + "'");
-        try{
-            int i = 0;
-            while(rs.next()){
-                i = rs.getInt("count(*)");
+        if(!error){
+            mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+            ResultSet rs = mysql.query("SELECT count(*) FROM man10_moneypool WHERE wired_uuid ='" + wiredUuid + "' AND plugin_id ='" + pId + "' AND plugin = '" + pluginName + "'");
+            try {
+                int i = 0;
+                while (rs.next()) {
+                    i = rs.getInt("count(*)");
+                }
+                rs.close();
+                mysql.close();
+                Bukkit.broadcastMessage(String.valueOf(i));
+                if (i <= 0) {
+                    long res = createNewMoneyPool(pId, moneyPoolTerm, moneyPoolType, true, wiredUuid, Bukkit.getOfflinePlayer(wiredUuid).getName(), pluginName, memo);
+                    getMoneyPoolObject(res);
+                }else{
+                    getMoneyPoolObject(getWiredMoneyPoolId(pluginName, wiredUuid, pId));
+                }
+            } catch (SQLException e) {
             }
-            rs.close();
-            mysql.close();
-            if(i <= 0){
-                long res = createNewMoneyPool(pid, moneyPoolTerm, moneyPoolType, true, wiredUuid, Bukkit.getOfflinePlayer(wiredUuid).getName(), pluginName, memo);
-            }
-        }catch(SQLException e){
-
         }
     }
 
+    private long getWiredMoneyPoolId(String pluginName, UUID uuid, int pId){
+        ResultSet count = mysql.query("SELECT id FROM man10_moneypool WHERE plugin='" + pluginName + "' and plugin_id ='" + pId + "' and wired_uuid ='" + uuid + "'");
+        long id = -1;
+        try {
+            while(count.next()){
+                id = count.getLong("id");
+            }
+            count.close();
+            mysql.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return id;
+    }
 
     public MoneyPoolObject(long id) {
         mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
@@ -159,6 +180,52 @@ public class MoneyPoolObject {
         }
     }
 
+    private void getMoneyPoolObject(long id){
+        ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
+        try {
+            int i = 0;
+            if(count.next()){
+                i = count.getInt("count(*)");
+            }
+            count.close();
+            mysql.close();
+            if(i  <= 0){
+                this.available = false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if(this.available){
+            ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
+            try {
+                if(rs == null){
+                    this.available = false;
+                    mysql.close();
+                }else{
+                    while (rs.next()) {
+                        this.id = rs.getLong("id");
+                        this.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
+                        this.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
+                        try{
+                            this.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
+                        }catch(IllegalArgumentException e){
+                        }
+                        this.wiredName = rs.getString("wired_name");
+
+                        this.value = rs.getDouble("balance");
+                        this.plugin = rs.getString("plugin");
+                        this.pId = rs.getLong("plugin_id");
+                        this.memo = rs.getString("memo");
+                        this.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
+                    }
+                    rs.close();
+                    mysql.close();
+                }
+            } catch (SQLException | NullPointerException e) {
+                this.available = false;
+            }
+        }
+    }
 
     public boolean isAvailable(){
         return this.available;

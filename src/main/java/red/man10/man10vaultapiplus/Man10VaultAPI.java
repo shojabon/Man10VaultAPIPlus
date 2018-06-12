@@ -7,12 +7,15 @@ import red.man10.man10vaultapiplus.utils.MySQLAPI;
 import red.man10.man10vaultapiplus.utils.VaultAPI;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Man10VaultAPI {
 
     MySQLAPI mysql;
     VaultAPI vault = null;
     String pluginName;
+    private ExecutorService pool = Executors.newFixedThreadPool(3);
 
     public Man10VaultAPI(String pluginName){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
@@ -57,13 +60,14 @@ public class Man10VaultAPI {
         if (transactionLogType == null) {
             transactionLogType = TransactionLogType.RAW;
         }
-        boolean res = mysql.execute("INSERT INTO man10_transaction (`id`,`category`,`type`,`plugin`,`balance`,`from_name`,`to_name`,`from_uuid`,`to_uuid`,`from_old_balance`,`from_new_balance`,`to_old_balance`,`to_new_balance`,`pool_id`,`log_type`,`memo`) VALUES " +
+        mysql.executeThread("INSERT INTO man10_transaction (`id`,`category`,`type`,`plugin`,`balance`,`from_name`,`to_name`,`from_uuid`,`to_uuid`,`from_old_balance`,`from_new_balance`,`to_old_balance`,`to_new_balance`,`pool_id`,`log_type`,`memo`) VALUES " +
                 "('0','" + category + "','" + type + "','" + pluginName + "','" + value + "','" + fromName + "','" + toName + "','" + fromUuidPut + "','" + toUuidPut + "','" + fromOldBalance + "','" + fromNewBalance + "','" + toOldBalance + "','" + toNewBalance + "','" + poolId + "','" + transactionLogType + "','" + memo + "');");
-        if(res){
-            return 0;
-        }
-        return -998;
+        return 0;
     }
+
+    /////////////////////
+    //    player
+    ////////////////////
 
     public int transferMoneyPlayerToPlayer(UUID uuidFrom, UUID uuidTo, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
         OfflinePlayer from = Bukkit.getOfflinePlayer(uuidFrom);
@@ -128,17 +132,8 @@ public class Man10VaultAPI {
         if(fromOldBalance < value){
             return -3;
         }
-        boolean fromS = vault.silentWithdraw(from, value);
-        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
-        if(!fromS || !toS){
-            if(fromS){
-                vault.silentDeposit(from, value);
-            }
-            if(toS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + pool.getId() + "'");
-            }
-            return -4;
-        }
+        vault.silentWithdraw(from, value);
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -153,17 +148,8 @@ public class Man10VaultAPI {
         if(fromOldBalance < value){
             return -3;
         }
-        boolean fromS = vault.silentWithdraw(from, value);
-        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
-        if(!fromS || !toS){
-            if(fromS){
-                vault.silentDeposit(from, value);
-            }
-            if(toS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + pool.getId() + "'");
-            }
-            return -4;
-        }
+        vault.silentWithdraw(from, value);
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -178,14 +164,11 @@ public class Man10VaultAPI {
         if (from == null){
             return -1;
         }
+        final String memoo = memo;
         double fromOldBalance = vault.getBalance(from);
-        boolean fromS = vault.silentWithdraw(from, value);
-        if(!fromS){
-            vault.silentDeposit(from, value);
-            return -4;
-        }
+        vault.silentWithdraw(from, value);
         double fromNewBalance = fromOldBalance - value;
-        int a = createTransactionLog(TransactionCategory.VOID, TransactionType.PAY, this.pluginName, value, from.getName(), uuidFrom, "||VOID||", null, fromOldBalance, fromNewBalance, 0, 0, -1, TransactionLogType.BOTH, memo);
+        int a = createTransactionLog(TransactionCategory.VOID, TransactionType.PAY, pluginName, value, from.getName(), uuidFrom, "||VOID||", null, fromOldBalance, fromNewBalance, 0, 0, -1, TransactionLogType.BOTH, memoo);
         return a;
     }
 
@@ -207,6 +190,10 @@ public class Man10VaultAPI {
         int a = createTransactionLog(TransactionCategory.VOID, TransactionType.RECIVE, this.pluginName, value, "||VOID||", null, to.getName(), to.getUniqueId(), 0, 0, toOldBalance, toNewBalance, -1, TransactionLogType.BOTH, memo);
         return a;
     }
+
+    /////////////////////
+    //    pool
+    ////////////////////
 
     public int transferMoneyPoolToPlayer(long fromPoolId, UUID uuidTo, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
         OfflinePlayer to = Bukkit.getOfflinePlayer(uuidTo);
@@ -232,16 +219,7 @@ public class Man10VaultAPI {
             return -3;
         }
         boolean toS = vault.silentDeposit(to, value);
-        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
-        if(!fromS || !toS){
-            if(toS){
-                vault.silentWithdraw(to, value);
-            }
-            if(fromS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
-            }
-            return -4;
-        }
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() , to.getUniqueId(), fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -265,17 +243,8 @@ public class Man10VaultAPI {
         if(fromOldBalance < value){
             return -3;
         }
-        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
-        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
-        if(!fromS || !toS){
-            if(toS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + to.getId() + "'");
-            }
-            if(fromS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
-            }
-            return -4;
-        }
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(TransactionCategory.TAX, TransactionType.PAY, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -305,17 +274,8 @@ public class Man10VaultAPI {
         if(fromOldBalance < value){
             return -3;
         }
-        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
-        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
-        if(!fromS || !toS){
-            if(toS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + to.getId() + "'");
-            }
-            if(fromS){
-                mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + pool.getId() + "'");
-            }
-            return -4;
-        }
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -331,11 +291,7 @@ public class Man10VaultAPI {
             return -1;
         }
         double fromOldBalance = from.getBalance();
-        boolean fromS = mysql.execute("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + from.getId() + "'");
-        if(!fromS){
-            mysql.execute("UPDATE man10_moneypool SET balance = balance + '" + value + "' WHERE id = '" + from.getId() + "'");
-            return -4;
-        }
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + from.getId() + "'");
         double fromNewBalance = fromOldBalance - value;
         int a = createTransactionLog(TransactionCategory.VOID, TransactionType.PAY, this.pluginName, value, from.getName() + from.getId(), null, "||VOID||", null, fromOldBalance, fromNewBalance, 0, 0, from.getId(), TransactionLogType.BOTH, memo);
         return a;
@@ -350,16 +306,24 @@ public class Man10VaultAPI {
             return -1;
         }
         double toOldBalance = to.getBalance();
-        boolean toS = mysql.execute("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
-        if(!toS){
-            mysql.execute("UPDATE man10_moneypool SET balance = balance - '" + value + "' WHERE id = '" + to.getId() + "'");
-            return -4;
-        }
+        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
         double toNewBalance = toOldBalance - value;
         int a = createTransactionLog(TransactionCategory.VOID, TransactionType.PAY, this.pluginName, value, "||VOID||", null, to.getName() + to.getId(), null, 0,0, toOldBalance, toNewBalance, to.getId(), TransactionLogType.BOTH, memo);
         return a;
     }
 
+    public int clrearMoneyPool(long fromPoolId, String memo){
+        MoneyPoolObject mpo = new MoneyPoolObject(fromPoolId);
+        if(!mpo.isAvailable()){
+            return -1;
+        }
+        return takeMoneyPoolMoney(fromPoolId, mpo.getBalance(), memo);
+    }
+
+
+    /////////////////////
+    //    country
+    ////////////////////
     public int transferMoneyCountryToPlayer(UUID uuidTo, double value, String memo){
         return transferMoneyPoolToPlayer(1, uuidTo, value, TransactionCategory.TAX, TransactionType.RECIVE, memo);
     }
@@ -375,6 +339,7 @@ public class Man10VaultAPI {
     public int giveCountyMoney(double value, String memo){
         return giveMoneyPoolMoney(1, value, memo);
     }
+
 
 
 
