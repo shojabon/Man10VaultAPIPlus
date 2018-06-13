@@ -25,9 +25,11 @@ public class MoneyPoolObject {
     private boolean available = true;
 
     private MySQLAPI mysql;
+    private Man10VaultAPI vault;
 
     public MoneyPoolObject(String pluginName, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, moneyPoolTerm, moneyPoolType,false,null,null,pluginName,memo);
         this.term = moneyPoolTerm;
         this.value = 0;
@@ -39,6 +41,7 @@ public class MoneyPoolObject {
 
     public MoneyPoolObject(String pluginName){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,null);
         this.term = MoneyPoolTerm.UNKNOWN;
         this.value = 0;
@@ -49,6 +52,7 @@ public class MoneyPoolObject {
 
     public MoneyPoolObject(String pluginName, String memo){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,memo);
         this.term = MoneyPoolTerm.UNKNOWN;
         this.value = 0;
@@ -96,6 +100,7 @@ public class MoneyPoolObject {
             }
         }
         if(!error){
+            vault = new Man10VaultAPI(pluginName);
             mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
             ResultSet rs = mysql.query("SELECT count(*) FROM man10_moneypool WHERE wired_uuid ='" + wiredUuid + "' AND plugin_id ='" + pId + "' AND plugin = '" + pluginName + "'");
             try {
@@ -117,23 +122,9 @@ public class MoneyPoolObject {
         }
     }
 
-    private long getWiredMoneyPoolId(String pluginName, UUID uuid, int pId){
-        ResultSet count = mysql.query("SELECT id FROM man10_moneypool WHERE plugin='" + pluginName + "' and plugin_id ='" + pId + "' and wired_uuid ='" + uuid + "'");
-        long id = -1;
-        try {
-            while(count.next()){
-                id = count.getLong("id");
-            }
-            count.close();
-            mysql.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return id;
-    }
-
-    public MoneyPoolObject(long id) {
+    public MoneyPoolObject(String pluginName, long id) {
         mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
+        vault = new Man10VaultAPI(pluginName);
         ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
         try {
             int i = 0;
@@ -179,6 +170,22 @@ public class MoneyPoolObject {
             }
         }
     }
+
+    private long getWiredMoneyPoolId(String pluginName, UUID uuid, int pId){
+        ResultSet count = mysql.query("SELECT id FROM man10_moneypool WHERE plugin='" + pluginName + "' and plugin_id ='" + pId + "' and wired_uuid ='" + uuid + "'");
+        long id = -1;
+        try {
+            while(count.next()){
+                id = count.getLong("id");
+            }
+            count.close();
+            mysql.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return id;
+    }
+
 
     private void getMoneyPoolObject(long id){
         ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
@@ -226,6 +233,51 @@ public class MoneyPoolObject {
             }
         }
     }
+
+    public int dumpBalanceToWiredPlayer(TransactionCategory transactionCategory, TransactionType transactionType, String memo){
+        if(!this.available){
+            return -1;
+        }
+        if(!this.wired){
+            return -2;
+        }
+        if(this.frozen){
+            return -3;
+        }
+        return vault.transferMoneyPoolToPlayer(this.id, this.wiredUuid, this.value, transactionCategory, transactionType, memo);
+    }
+
+    public int transferBalanceToPlayer(UUID toUUID, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
+        if(!this.available){
+            return -1;
+        }
+        if(this.frozen){
+            return -3;
+        }
+        return vault.transferMoneyPoolToPlayer(this.id, toUUID, value, transactionCategory, transactionType, memo);
+    }
+
+    public int transferBalanceToPool(long toPoolId, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
+        if(!this.available){
+            return -1;
+        }
+        if(this.frozen){
+            return -3;
+        }
+        return vault.transferMoneyPoolToPool(this.id, toPoolId, value, transactionCategory, transactionType, memo);
+    }
+
+    public int transferBalanceToCountry(double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
+        if(!this.available){
+            return -1;
+        }
+        if(this.frozen){
+            return -3;
+        }
+        return vault.transferMoneyPoolToCountry(this.id, value, transactionCategory, transactionType, memo);
+    }
+
+
 
     public boolean isAvailable(){
         return this.available;
