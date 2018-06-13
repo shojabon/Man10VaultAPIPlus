@@ -281,7 +281,34 @@ public class MoneyPoolObject {
         return vault.transferMoneyPoolToCountry(this.id, value, transactionCategory, transactionType, memo);
     }
 
+    public int transferMoneyPlayerToPool(UUID uuidFrom,  double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
+        if(!frozen){
+            return -1;
+        }
+        int a = vault.transferMoneyPlayerToPool(uuidFrom, getId(), value, transactionCategory, transactionType, memo);
+        getCurrentBalance();
+        return a;
+    }
 
+
+    public double getCurrentBalance(){
+        if(!isAvailable()){
+            return -1;
+        }
+        ResultSet rs = mysql.query("SELECT balance FROM man10_moneypool WHERE id='" + getId() + "' LIMIT 1");
+        double balance = 0;
+        try {
+            while (rs.next()){
+                balance = rs.getDouble("balance");
+            }
+            rs.close();
+            mysql.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        this.value = balance;
+        return balance;
+    }
 
     public boolean isAvailable(){
         return this.available;
