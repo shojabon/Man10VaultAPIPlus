@@ -4,6 +4,7 @@ public enum TransactionType{
     MEMORY_TRANSFER,
     UNKNOWN,
     PAY,
+    CANCEL,
     DEPOSIT,
     WITHDRAW,
     TRADE,
