@@ -30,15 +30,6 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
     VaultAPI original = null;
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(command.getName().equalsIgnoreCase("test")){
-            Player p = (Player) sender;
-            long a = System.currentTimeMillis();
-            for(int i = 0;i < 100;i++){
-                vault.takePlayerMoney(p.getUniqueId(), 1, null);
-            }
-            long b = System.currentTimeMillis();
-            Bukkit.broadcastMessage(String.valueOf(b - a));
-        }
         return true;
     }
 }

@@ -2,6 +2,10 @@ package red.man10.man10vaultapiplus;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import red.man10.man10vaultapiplus.enums.MoneyPoolTerm;
+import red.man10.man10vaultapiplus.enums.MoneyPoolType;
+import red.man10.man10vaultapiplus.enums.TransactionCategory;
+import red.man10.man10vaultapiplus.enums.TransactionType;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
 
 import java.sql.ResultSet;
