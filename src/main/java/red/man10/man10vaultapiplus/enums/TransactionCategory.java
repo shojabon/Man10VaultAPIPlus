@@ -6,7 +6,7 @@ public enum TransactionCategory{
     GENERAL,
     SHOP,
     GAMBLE,
-    REPOSITORY_NOTE,
+    ECONOMY_NOTE,
     TAX,
     MARKET,
     GAME

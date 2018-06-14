@@ -30,6 +30,9 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
     VaultAPI original = null;
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(command.getName().equalsIgnoreCase("test")){
+            Bukkit.broadcastMessage(new JPYBalanceFormat(1000000).getString());
+        }
         return true;
     }
 }

@@ -26,7 +26,7 @@ public class Man10VaultAPI {
         this.pluginName = pluginName;
     }
 
-    private int  createTransactionLog(TransactionCategory category, TransactionType type, String pluginName, double value,
+    public int  createTransactionLog(TransactionCategory category, TransactionType type, String pluginName, double value,
                                       String fromName, UUID fromUUID,
                                       String toName, UUID toUUID,
                                       double fromOldBalance, double fromNewBalance,
@@ -207,6 +207,47 @@ public class Man10VaultAPI {
         }
         double toNewBalance = toOldBalance +  value;
         int a = createTransactionLog(TransactionCategory.VOID, transactionType, this.pluginName, value, "||VOID||", null, to.getName(), to.getUniqueId(), 0, 0, toOldBalance, toNewBalance, -1, TransactionLogType.BOTH, memo);
+        return a;
+    }
+
+    public int takePlayerMoney(UUID uuidFrom, double value, TransactionType transactionType,   String memo, TransactionLogType logType){
+        OfflinePlayer from = Bukkit.getOfflinePlayer(uuidFrom);
+        if(memo == null){
+            memo = "";
+        }
+        if (from == null){
+            return -1;
+        }
+        if(transactionType == null){
+            transactionType = TransactionType.UNKNOWN;
+        }
+        final String memoo = memo;
+        double fromOldBalance = vault.getBalance(from);
+        vault.silentWithdraw(from, value);
+        double fromNewBalance = fromOldBalance - value;
+        int a = createTransactionLog(TransactionCategory.VOID,  transactionType, pluginName, value, from.getName(), uuidFrom, "||VOID||", null, fromOldBalance, fromNewBalance, 0, 0, -1, logType, memoo);
+        return a;
+    }
+
+    public int givePlayerMoney(UUID uuidTo, double value, TransactionType transactionType,   String memo, TransactionLogType logType){
+        OfflinePlayer to = Bukkit.getOfflinePlayer(uuidTo);
+        if(memo == null){
+            memo = "";
+        }
+        if (to == null){
+            return -1;
+        }
+        if(transactionType == null){
+            transactionType = TransactionType.UNKNOWN;
+        }
+        double toOldBalance = vault.getBalance(to);
+        boolean toS = vault.silentDeposit(to, value);
+        if(!toS){
+            vault.silentWithdraw(to, value);
+            return -4;
+        }
+        double toNewBalance = toOldBalance +  value;
+        int a = createTransactionLog(TransactionCategory.VOID, transactionType, this.pluginName, value, "||VOID||", null, to.getName(), to.getUniqueId(), 0, 0, toOldBalance, toNewBalance, -1, logType, memo);
         return a;
     }
 
