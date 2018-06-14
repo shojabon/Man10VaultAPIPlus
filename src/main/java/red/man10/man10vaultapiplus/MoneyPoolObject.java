@@ -191,7 +191,7 @@ public class MoneyPoolObject {
     }
 
 
-    private void getMoneyPoolObject(long id){
+    private MoneyPoolObject getMoneyPoolObject(long id){
         ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
         try {
             int i = 0;
@@ -236,6 +236,7 @@ public class MoneyPoolObject {
                 this.available = false;
             }
         }
+        return this;
     }
 
     public int dumpBalanceToWiredPlayer(TransactionCategory transactionCategory, TransactionType transactionType, String memo){
@@ -308,6 +309,23 @@ public class MoneyPoolObject {
         }
         this.value = balance;
         return balance;
+    }
+
+    public int sendRemainderBalanceToCountry(TransactionCategory transactionCategory,TransactionType transactionType, String memo){
+        return vault.transferMoneyPoolToCountry(getId(), getCurrentBalance(), transactionCategory, transactionType, memo);
+    }
+
+    public void scheduleSendRemainderBalanceToCountry(TransactionCategory transactionCategory,TransactionType transactionType, String mem){
+        Runnable r = () -> {
+            try {
+                Thread.sleep(1500);
+                vault.transferMoneyPoolToCountry(getId(), getCurrentBalance(), transactionCategory, transactionType, memo);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+        Thread t = new Thread(r);
+        t.start();
     }
 
     public boolean isAvailable(){

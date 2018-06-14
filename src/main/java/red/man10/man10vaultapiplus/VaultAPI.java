@@ -1,4 +1,4 @@
-package red.man10.man10vaultapiplus.utils;
+package red.man10.man10vaultapiplus;
 
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -12,15 +12,14 @@ import java.util.UUID;
 /**
  * Created by sho on 2017/07/21.
  */
-public class VaultAPI {
+class VaultAPI {
     public static Economy economy = null;
 
-    public VaultAPI(){
+    public  VaultAPI(){
         setupEconomy();
     }
 
     private boolean setupEconomy() {
-        Bukkit.getLogger().info("setupEconomy");
         if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
             Bukkit.getLogger().warning("Vault plugin is not installed");
             return false;
@@ -31,7 +30,6 @@ public class VaultAPI {
             return false;
         }
         economy = rsp.getProvider();
-        Bukkit.getLogger().info("Economy setup");
         return economy != null;
     }
 

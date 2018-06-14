@@ -7,7 +7,6 @@ import red.man10.man10vaultapiplus.enums.TransactionCategory;
 import red.man10.man10vaultapiplus.enums.TransactionLogType;
 import red.man10.man10vaultapiplus.enums.TransactionType;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
-import red.man10.man10vaultapiplus.utils.VaultAPI;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -70,6 +69,10 @@ public class Man10VaultAPI {
 
     public double getBalance(UUID uuid){
         return vault.getBalance(uuid);
+    }
+
+    public String getPluginName(){
+        return this.pluginName;
     }
 
     /////////////////////
@@ -287,8 +290,6 @@ public class Man10VaultAPI {
     }
 
     public int transferMoneyPoolToCountry(long fromPoolId, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
-        MoneyPoolObject to = new MoneyPoolObject(this.pluginName, 1);
-        MoneyPoolObject pool = new MoneyPoolObject(this.pluginName, fromPoolId);
         if(memo == null){
             memo = "";
         }
@@ -298,23 +299,7 @@ public class Man10VaultAPI {
         if(transactionType == null){
             transactionType = TransactionType.PAY;
         }
-        if (!to.isAvailable()){
-            return -2;
-        }
-        if(!pool.isAvailable()){
-            return -1;
-        }
-        double fromOldBalance = pool.getBalance();
-        double toOldBalance = to.getBalance();
-        if(fromOldBalance < value){
-            return -3;
-        }
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
-        double fromNewBalance = fromOldBalance - value;
-        double toNewBalance = toOldBalance + value;
-        int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
-        return a;
+        return transferMoneyPoolToPool(fromPoolId, 1,value, transactionCategory, transactionType, memo);
     }
 
     public int transferMoneyPoolToPool(long fromPoolId, long toPoolId, double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
