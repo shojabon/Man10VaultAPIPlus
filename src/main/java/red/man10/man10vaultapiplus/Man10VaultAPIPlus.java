@@ -1,9 +1,19 @@
 package red.man10.man10vaultapiplus;
 
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import red.man10.man10vaultapiplus.enums.TransactionCategory;
+import red.man10.man10vaultapiplus.enums.TransactionType;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public final class Man10VaultAPIPlus extends JavaPlugin {
 
@@ -70,8 +80,57 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
             "COLLATE='utf8_general_ci'\n" +
             "ENGINE=InnoDB\n" +
             ";\n";
+
+    HashMap<UUID, Double>  payComfirm = new HashMap<>();
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(command.getName().equalsIgnoreCase("pay")){
+            if(sender instanceof Player){
+                Player p = (Player) sender;
+                if(args.length == 2){
+                    try{
+                        double value = Double.valueOf(args[1]);
+                        Player to = Bukkit.getPlayer(args[0]);
+                        if(to == null || !to.isOnline() || !to.getName().equalsIgnoreCase(args[0])){
+                            p.sendMessage("§4プレイヤーがオンラインではありません  / Player is not online");
+                            return false;
+                        }
+                        if(to.getUniqueId() == p.getUniqueId()){
+                            p.sendMessage("§4自分自身には送信できません");
+                            p.sendMessage("§4You cannot send money to yourself");
+                            return false;
+                        }
+                        if(!payComfirm.containsKey(p.getUniqueId())){
+                            p.sendMessage("§7§l支払いを認証するためにはもう一度" + command.getName() + "と打ってください");
+                            p.sendMessage("§7§lType" + command.getName() + " to confirm your transaction");
+                            payComfirm.put(p.getUniqueId(), value);
+                            return false;
+                        }
+                        if(payComfirm.get(p.getUniqueId()) == value){
+                            vault.transferMoneyPlayerToPlayer(p.getUniqueId(), to.getUniqueId(), value, TransactionCategory.GENERAL, TransactionType.PAY, "Pay " + p.getName() + " =>" + to.getName() + " value:" + value);
+                            to.sendMessage("§a" + p.getName() + "さんから" + String.format("%,d", new Double(value).longValue())   + "円送金されました");
+                            to.sendMessage("§a" + String.format("%,d", new Double(value).longValue())  + "$ has been sent from " + p.getName());
+
+                            p.sendMessage("§a" + to.getName() + "さんに" + String.format("%,d", new Double(value).longValue())   + "円送金されました");
+                            p.sendMessage("§a" + String.format("%,d", new Double(value).longValue())  + "$ has been sent to " + to.getName());
+                            payComfirm.remove(p.getUniqueId());
+                            return false;
+                        }
+                        if(payComfirm.get(p.getUniqueId()) != value){
+                            p.sendMessage("§7§l支払いを認証するためにはもう一度" + command.getName() + "と打ってください");
+                            p.sendMessage("§7§lType" + command.getName() + " to confirm your transaction");
+                            payComfirm.put(p.getUniqueId(), value);
+                            return false;
+                        }
+                    }catch (NumberFormatException e){
+                        p.sendMessage("§c/pay <プレイヤー名/player name> <金額/value>");
+                    }
+                }else{
+                    p.sendMessage("§c/pay <プレイヤー名/player name> <金額/value>");
+                }
+            }
+        }
         return true;
     }
 }

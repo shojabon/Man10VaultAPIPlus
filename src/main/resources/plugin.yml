@@ -4,4 +4,4 @@ main: red.man10.man10vaultapiplus.Man10VaultAPIPlus
 authors: [Sho0]
 depend: [Essentials, Vault]
 commands:
- test:
+ pay:
