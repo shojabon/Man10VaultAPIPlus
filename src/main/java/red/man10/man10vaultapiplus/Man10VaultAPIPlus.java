@@ -92,6 +92,10 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
                     try{
                         double value = Double.valueOf(args[1]);
                         Player to = Bukkit.getPlayer(args[0]);
+                        if(value < 1){
+                            p.sendMessage("§40円以下の支払いはできません/ You cannot create a transaction below 0 $");
+                            return false;
+                        }
                         if(to == null || !to.isOnline() || !to.getName().equalsIgnoreCase(args[0])){
                             p.sendMessage("§4プレイヤーがオンラインではありません  / Player is not online");
                             return false;
