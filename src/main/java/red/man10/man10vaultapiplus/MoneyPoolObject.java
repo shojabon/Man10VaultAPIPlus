@@ -311,23 +311,6 @@ public class MoneyPoolObject {
         return balance;
     }
 
-    public int sendRemainderBalanceToCountry(TransactionCategory transactionCategory,TransactionType transactionType, String memo){
-        return vault.transferMoneyPoolToCountry(getId(), getCurrentBalance(), transactionCategory, transactionType, memo);
-    }
-
-    public void scheduleSendRemainderBalanceToCountry(TransactionCategory transactionCategory,TransactionType transactionType, String mem){
-        Runnable r = () -> {
-            try {
-                Thread.sleep(1500);
-                vault.transferMoneyPoolToCountry(getId(), getCurrentBalance(), transactionCategory, transactionType, memo);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        };
-        Thread t = new Thread(r);
-        t.start();
-    }
-
     public boolean isAvailable(){
         return this.available;
     }
