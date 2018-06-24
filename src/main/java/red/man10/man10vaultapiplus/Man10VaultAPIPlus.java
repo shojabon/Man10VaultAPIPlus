@@ -124,8 +124,8 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
                             return false;
                         }
                         if(!payComfirm.containsKey(p.getUniqueId())){
-                            p.sendMessage("§7§l支払いを認証するためにはもう一度" + command.getName() + "と打ってください");
-                            p.sendMessage("§7§lType" + command.getName() + " to confirm your transaction");
+                            p.sendMessage("§7§l支払いを認証するためにはもう一度 /" + command.getName() + " " + to.getName() + " " + args[1] + " と打ってください");
+                            p.sendMessage("§7§lType /" + command.getName() + " " + to.getName() + " " + args[1] + " again to confirm your transaction");
                             payComfirm.put(p.getUniqueId(), value);
                             return false;
                         }
