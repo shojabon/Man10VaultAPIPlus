@@ -2,6 +2,7 @@ package red.man10.man10vaultapiplus;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.omg.PortableInterceptor.TRANSPORT_RETRY;
 import red.man10.man10vaultapiplus.enums.MoneyPoolTerm;
 import red.man10.man10vaultapiplus.enums.MoneyPoolType;
 import red.man10.man10vaultapiplus.enums.TransactionCategory;
@@ -18,7 +19,7 @@ public class MoneyPoolObject {
     private MySQLAPI mysql;
     private Man10VaultAPI vault;
 
-    private MoneyPoolManager manager = new MoneyPoolManager();
+    private static MoneyPoolManager manager = new MoneyPoolManager();
 
     public MoneyPoolObject(String pluginName, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
@@ -281,28 +282,7 @@ public class MoneyPoolObject {
             return -1;
         }
         int a = vault.transferMoneyPlayerToPool(uuidFrom, getId(), value, transactionCategory, transactionType, memo);
-        getCurrentBalance();
         return a;
-    }
-
-
-    public double getCurrentBalance(){
-        if(!isAvailable()){
-            return -1;
-        }
-        ResultSet rs = mysql.query("SELECT balance FROM man10_moneypool WHERE id='" + getId() + "' LIMIT 1");
-        double balance = 0;
-        try {
-            while (rs.next()){
-                balance = rs.getDouble("balance");
-            }
-            rs.close();
-            mysql.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        data.value = balance;
-        return balance;
     }
 
     public boolean isAvailable(){
@@ -310,7 +290,16 @@ public class MoneyPoolObject {
     }
 
     public double getBalance(){
-        return manager.get(data.id).balance;
+        double value = 0;
+        MoneyPoolData dataa = manager.get(data.id);
+        if(dataa != null){
+            return dataa.balance;
+        }
+        return value;
+    }
+
+    public MoneyPoolData getData(){
+        return data;
     }
 
     public long getId(){
@@ -322,6 +311,10 @@ public class MoneyPoolObject {
             return "CTS POOL:";
         }
         return "POOL:";
+    }
+
+    public void sendRemainderToCountry(String memo){
+        vault.transferMoneyPoolToCountry(getId(), getBalance(), TransactionCategory.TAX, TransactionType.PAY, memo);
     }
 
 

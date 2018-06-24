@@ -14,6 +14,10 @@ import java.util.*;
 
 public final class Man10VaultAPIPlus extends JavaPlugin {
 
+
+
+
+
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -32,7 +36,7 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
                     Set<Long> keys = MoneyPoolManager.changesMade.keySet();
                     for(Long l : keys){
                         mysql.executeThread("UPDATE man10_moneypool SET balance ='" + manager.get(l).balance + "' WHERE id ='" + manager.get(l).id + "'");
-                        MoneyPoolManager.poolObjects.remove(l);
+                        MoneyPoolManager.changesMade.remove(l);
                     }
                 };
                 Thread t = new Thread(r);
