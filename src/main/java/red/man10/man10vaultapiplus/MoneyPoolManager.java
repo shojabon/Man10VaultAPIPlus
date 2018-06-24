@@ -4,16 +4,16 @@ import java.util.HashMap;
 
 public class MoneyPoolManager {
 
-    private static HashMap<Long, MoneyPoolObject> poolObjects = new HashMap<>();
+    private static HashMap<Long, MoneyPoolData> poolObjects = new HashMap<>();
 
     public MoneyPoolManager(){
     }
 
-    public void put(Long id, MoneyPoolObject obj){
+    public void put(Long id, MoneyPoolData obj){
         poolObjects.put(id, obj);
     }
 
-    public MoneyPoolObject get(Long id){
+    public MoneyPoolData get(Long id){
         return poolObjects.get(id);
     }
 

@@ -30,7 +30,7 @@ public class MoneyPoolObject {
         data.memo = memo;
         data.id = id;
         data.frozen = false;
-        manager.put(id, this);
+        manager.put(id, data);
     }
 
     public MoneyPoolObject(String pluginName){
@@ -42,7 +42,7 @@ public class MoneyPoolObject {
         data.plugin = pluginName;
         data.id = id;
         data.frozen = false;
-        manager.put(id, this);
+        manager.put(id, data);
 
     }
 
@@ -56,7 +56,7 @@ public class MoneyPoolObject {
         data.memo = memo;
         data.id = id;
         data.frozen = false;
-        manager.put(id, this);
+        manager.put(id, data);
     }
 
     private long createNewMoneyPool(int pId, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, boolean wired, UUID wiredUuid, String wiredName, String pluginName, String memo){
