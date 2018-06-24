@@ -13,57 +13,50 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 public class MoneyPoolObject {
-    private long id;
-    private MoneyPoolTerm term;
-
-    private boolean wired;
-    private UUID wiredUuid;
-    private String wiredName;
-
-    private double value;
-    private String plugin;
-    private long pId;
-    private String memo;
-    private boolean frozen;
-
-    private boolean available = true;
+    private MoneyPoolData data = new MoneyPoolData();
 
     private MySQLAPI mysql;
     private Man10VaultAPI vault;
+
+    private MoneyPoolManager manager = new MoneyPoolManager();
 
     public MoneyPoolObject(String pluginName, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, String memo){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, moneyPoolTerm, moneyPoolType,false,null,null,pluginName,memo);
-        this.term = moneyPoolTerm;
-        this.value = 0;
-        this.plugin = pluginName;
-        this.memo = memo;
-        this.id = id;
-        frozen = false;
+        data.term = moneyPoolTerm;
+        data.value = 0;
+        data.plugin = pluginName;
+        data.memo = memo;
+        data.id = id;
+        data.frozen = false;
+        manager.put(id, this);
     }
 
     public MoneyPoolObject(String pluginName){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,null);
-        this.term = MoneyPoolTerm.UNKNOWN;
-        this.value = 0;
-        this.plugin = pluginName;
-        this.id = id;
-        frozen = false;
+        data.term = MoneyPoolTerm.UNKNOWN;
+        data.value = 0;
+        data.plugin = pluginName;
+        data.id = id;
+        data.frozen = false;
+        manager.put(id, this);
+
     }
 
     public MoneyPoolObject(String pluginName, String memo){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,memo);
-        this.term = MoneyPoolTerm.UNKNOWN;
-        this.value = 0;
-        this.plugin = pluginName;
-        this.memo = memo;
-        this.id = id;
-        frozen = false;
+        data.term = MoneyPoolTerm.UNKNOWN;
+        data.value = 0;
+        data.plugin = pluginName;
+        data.memo = memo;
+        data.id = id;
+        data.frozen = false;
+        manager.put(id, this);
     }
 
     private long createNewMoneyPool(int pId, MoneyPoolTerm moneyPoolTerm, MoneyPoolType moneyPoolType, boolean wired, UUID wiredUuid, String wiredName, String pluginName, String memo){
@@ -74,7 +67,7 @@ public class MoneyPoolObject {
             moneyPoolType = MoneyPoolType.UNKNOWN;
         }
         if(!mysql.connectable()){
-            this.available = false;
+            data.available = false;
             return -999;
         }
         String uuidPut = "";
@@ -100,7 +93,7 @@ public class MoneyPoolObject {
             } catch (Man10VaultExeption man10VaultExeption) {
                 man10VaultExeption.printStackTrace();
                 error = true;
-                this.available = false;
+                data.available = false;
             }
         }
         if(!error){
@@ -124,6 +117,7 @@ public class MoneyPoolObject {
             } catch (SQLException e) {
             }
         }
+        manager.put(data.id, this);
     }
 
     public MoneyPoolObject(String pluginName, long id) {
@@ -138,39 +132,39 @@ public class MoneyPoolObject {
             count.close();
             mysql.close();
             if(i  <= 0){
-                this.available = false;
+                data.available = false;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if(this.available){
+        if(data.available){
             ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
             try {
                 if(rs == null){
-                    this.available = false;
+                    data.available = false;
                     mysql.close();
                 }else{
                     while (rs.next()) {
-                        this.id = rs.getLong("id");
-                        this.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
-                        this.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
+                        data.id = rs.getLong("id");
+                        data.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
+                        data.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
                         try{
-                            this.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
+                            data.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
                         }catch(IllegalArgumentException e){
                         }
-                        this.wiredName = rs.getString("wired_name");
+                        data.wiredName = rs.getString("wired_name");
 
-                        this.value = rs.getDouble("balance");
-                        this.plugin = rs.getString("plugin");
-                        this.pId = rs.getLong("plugin_id");
-                        this.memo = rs.getString("memo");
-                        this.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
+                        data.value = rs.getDouble("balance");
+                        data.plugin = rs.getString("plugin");
+                        data.pId = rs.getLong("plugin_id");
+                        data.memo = rs.getString("memo");
+                        data.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
                     }
                     rs.close();
                     mysql.close();
                 }
             } catch (SQLException | NullPointerException e) {
-                this.available = false;
+                data.available = false;
             }
         }
     }
@@ -201,89 +195,89 @@ public class MoneyPoolObject {
             count.close();
             mysql.close();
             if(i  <= 0){
-                this.available = false;
+                data.available = false;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if(this.available){
+        if(data.available){
             ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
             try {
                 if(rs == null){
-                    this.available = false;
+                    data.available = false;
                     mysql.close();
                 }else{
                     while (rs.next()) {
-                        this.id = rs.getLong("id");
-                        this.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
-                        this.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
+                        data.id = rs.getLong("id");
+                        data.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
+                        data.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
                         try{
-                            this.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
+                            data.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
                         }catch(IllegalArgumentException e){
                         }
-                        this.wiredName = rs.getString("wired_name");
+                        data.wiredName = rs.getString("wired_name");
 
-                        this.value = rs.getDouble("balance");
-                        this.plugin = rs.getString("plugin");
-                        this.pId = rs.getLong("plugin_id");
-                        this.memo = rs.getString("memo");
-                        this.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
+                        data.value = rs.getDouble("balance");
+                        data.plugin = rs.getString("plugin");
+                        data.pId = rs.getLong("plugin_id");
+                        data.memo = rs.getString("memo");
+                        data.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
                     }
                     rs.close();
                     mysql.close();
                 }
             } catch (SQLException | NullPointerException e) {
-                this.available = false;
+                data.available = false;
             }
         }
         return this;
     }
 
     public int dumpBalanceToWiredPlayer(TransactionCategory transactionCategory, TransactionType transactionType, String memo){
-        if(!this.available){
+        if(!data.available){
             return -1;
         }
-        if(!this.wired){
+        if(!data.wired){
             return -2;
         }
-        if(this.frozen){
+        if(data.frozen){
             return -3;
         }
-        return vault.transferMoneyPoolToPlayer(this.id, this.wiredUuid, this.value, transactionCategory, transactionType, memo);
+        return vault.transferMoneyPoolToPlayer(data.id, data.wiredUuid, data.value, transactionCategory, transactionType, memo);
     }
 
     public int transferBalanceToPlayer(UUID toUUID, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
-        if(!this.available){
+        if(!data.available){
             return -1;
         }
-        if(this.frozen){
+        if(data.frozen){
             return -3;
         }
-        return vault.transferMoneyPoolToPlayer(this.id, toUUID, value, transactionCategory, transactionType, memo);
+        return vault.transferMoneyPoolToPlayer(data.id, toUUID, value, transactionCategory, transactionType, memo);
     }
 
     public int transferBalanceToPool(long toPoolId, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
-        if(!this.available){
+        if(!data.available){
             return -1;
         }
-        if(this.frozen){
+        if(data.frozen){
             return -3;
         }
-        return vault.transferMoneyPoolToPool(this.id, toPoolId, value, transactionCategory, transactionType, memo);
+        return vault.transferMoneyPoolToPool(data.id, toPoolId, value, transactionCategory, transactionType, memo);
     }
 
     public int transferBalanceToCountry(double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
-        if(!this.available){
+        if(!data.available){
             return -1;
         }
-        if(this.frozen){
+        if(data.frozen){
             return -3;
         }
-        return vault.transferMoneyPoolToCountry(this.id, value, transactionCategory, transactionType, memo);
+        return vault.transferMoneyPoolToCountry(data.id, value, transactionCategory, transactionType, memo);
     }
 
     public int transferMoneyPlayerToPool(UUID uuidFrom,  double value, TransactionCategory transactionCategory,TransactionType transactionType, String memo){
-        if(!frozen){
+        if(!data.frozen){
             return -1;
         }
         int a = vault.transferMoneyPlayerToPool(uuidFrom, getId(), value, transactionCategory, transactionType, memo);
@@ -307,20 +301,20 @@ public class MoneyPoolObject {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        this.value = balance;
+        data.value = balance;
         return balance;
     }
 
     public boolean isAvailable(){
-        return this.available;
+        return data.available;
     }
 
     public double getBalance(){
-        return this.value;
+        return data.value;
     }
 
     public long getId(){
-        return this.id;
+        return data.id;
     }
 
     public String getName(){
