@@ -117,7 +117,7 @@ public class MoneyPoolObject {
             } catch (SQLException e) {
             }
         }
-        manager.put(data.id, this);
+        manager.put(data.id, data);
     }
 
     public MoneyPoolObject(String pluginName, long id) {
@@ -310,7 +310,7 @@ public class MoneyPoolObject {
     }
 
     public double getBalance(){
-        return data.value;
+        return manager.get(data.id).balance;
     }
 
     public long getId(){

@@ -17,7 +17,7 @@ public class Man10VaultAPI {
     MySQLAPI mysql;
     VaultAPI vault = null;
     String pluginName;
-    private ExecutorService pool = Executors.newFixedThreadPool(3);
+    private static MoneyPoolManager manager = new MoneyPoolManager();
 
     public Man10VaultAPI(String pluginName){
         mysql = new  MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
@@ -143,7 +143,8 @@ public class Man10VaultAPI {
             return -3;
         }
         vault.silentWithdraw(from, value);
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
+        manager.get(poolId).balance = pool.getBalance() + value;
+        MoneyPoolManager.changesMade.put(poolId, true);
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -165,7 +166,8 @@ public class Man10VaultAPI {
             return -3;
         }
         vault.silentWithdraw(from, value);
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + pool.getId() + "'");
+        manager.get(1L).balance = pool.getBalance() + value;
+        MoneyPoolManager.changesMade.put(1L, true);
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, from.getName(), uuidFrom, pool.getName() + pool.getId(),  null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -282,7 +284,8 @@ public class Man10VaultAPI {
             return -3;
         }
         boolean toS = vault.silentDeposit(to, value);
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
+        manager.get(fromPoolId).balance = pool.getBalance() - value;
+        MoneyPoolManager.changesMade.put(pool.getId(), true);
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() , to.getUniqueId(), fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -325,8 +328,10 @@ public class Man10VaultAPI {
         if(fromOldBalance < value){
             return -3;
         }
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + pool.getId() + "'");
+        manager.get(fromPoolId).balance = pool.getBalance() - value;
+        manager.get(toPoolId).balance = to.getBalance() + value;
+        MoneyPoolManager.changesMade.put(pool.getId(), true);
+        MoneyPoolManager.changesMade.put(to.getId(), true);
         double fromNewBalance = fromOldBalance - value;
         double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(transactionCategory, transactionType, this.pluginName, value, pool.getName() + pool.getId(), null, to.getName() + to.getId() , null, fromOldBalance, fromNewBalance, toOldBalance, toNewBalance, pool.getId(), TransactionLogType.BOTH, memo);
@@ -345,7 +350,8 @@ public class Man10VaultAPI {
             return -1;
         }
         double fromOldBalance = from.getBalance();
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance -'" + value + "' WHERE id = '" + from.getId() + "'");
+        manager.get(fromPoolId).balance = from.getBalance() - value;
+        MoneyPoolManager.changesMade.put(fromPoolId, true);
         double fromNewBalance = fromOldBalance - value;
         int a = createTransactionLog(TransactionCategory.VOID, transactionType, this.pluginName, value, from.getName() + from.getId(), null, "||VOID||", null, fromOldBalance, fromNewBalance, 0, 0, from.getId(), TransactionLogType.BOTH, memo);
         return a;
@@ -363,7 +369,8 @@ public class Man10VaultAPI {
             return -1;
         }
         double toOldBalance = to.getBalance();
-        mysql.executeThread("UPDATE man10_moneypool SET balance = balance +'" + value + "' WHERE id = '" + to.getId() + "'");
+        manager.get(toPoolId).balance = to.getBalance() - value;
+        MoneyPoolManager.changesMade.put(toPoolId, true);
         double toNewBalance = toOldBalance - value;
         int a = createTransactionLog(TransactionCategory.VOID, transactionType, this.pluginName, value, "||VOID||", null, to.getName() + to.getId(), null, 0,0, toOldBalance, toNewBalance, to.getId(), TransactionLogType.BOTH, memo);
         return a;

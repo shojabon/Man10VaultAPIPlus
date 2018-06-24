@@ -1,10 +1,12 @@
 package red.man10.man10vaultapiplus;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public class MoneyPoolManager {
 
-    private static HashMap<Long, MoneyPoolData> poolObjects = new HashMap<>();
+    public static HashMap<Long, MoneyPoolData> poolObjects = new HashMap<>();
+    public static HashMap<Long, Boolean> changesMade = new HashMap<>();
 
     public MoneyPoolManager(){
     }
@@ -16,6 +18,8 @@ public class MoneyPoolManager {
     public MoneyPoolData get(Long id){
         return poolObjects.get(id);
     }
+
+
 
 
 }

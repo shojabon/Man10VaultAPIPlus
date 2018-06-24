@@ -1,19 +1,16 @@
 package red.man10.man10vaultapiplus;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import red.man10.man10vaultapiplus.enums.TransactionCategory;
 import red.man10.man10vaultapiplus.enums.TransactionType;
 import red.man10.man10vaultapiplus.utils.MySQLAPI;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public final class Man10VaultAPIPlus extends JavaPlugin {
 
@@ -26,6 +23,22 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
         original = new VaultAPI();
         mysql.execute(createMoneyPool);
         mysql.execute(createTransaction);
+
+        new BukkitRunnable(){
+
+            @Override
+            public void run() {
+                Runnable r = () -> {
+                    Set<Long> keys = MoneyPoolManager.changesMade.keySet();
+                    for(Long l : keys){
+                        mysql.executeThread("UPDATE man10_moneypool SET balance ='" + manager.get(l).balance + "' WHERE id ='" + manager.get(l).id + "'");
+                        MoneyPoolManager.poolObjects.remove(l);
+                    }
+                };
+                Thread t = new Thread(r);
+                t.start();
+            }
+        }.runTaskTimer(this, 1200, 1200);
     }
 
     @Override
@@ -35,6 +48,7 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
 
     public static MySQLAPI mysql = null;
     public Man10VaultAPI vault = null;
+    public static MoneyPoolManager manager = new MoneyPoolManager();
 
     VaultAPI original = null;
 
