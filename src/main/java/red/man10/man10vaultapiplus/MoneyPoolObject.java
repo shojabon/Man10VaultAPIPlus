@@ -26,7 +26,7 @@ public class MoneyPoolObject {
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, moneyPoolTerm, moneyPoolType,false,null,null,pluginName,memo);
         data.term = moneyPoolTerm;
-        data.value = 0;
+        data.balance = 0;
         data.plugin = pluginName;
         data.memo = memo;
         data.id = id;
@@ -39,7 +39,7 @@ public class MoneyPoolObject {
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,null);
         data.term = MoneyPoolTerm.UNKNOWN;
-        data.value = 0;
+        data.balance = 0;
         data.plugin = pluginName;
         data.id = id;
         data.frozen = false;
@@ -52,7 +52,7 @@ public class MoneyPoolObject {
         vault = new Man10VaultAPI(pluginName);
         long id = createNewMoneyPool(-1, null, null,false,null,null,pluginName,memo);
         data.term = MoneyPoolTerm.UNKNOWN;
-        data.value = 0;
+        data.balance = 0;
         data.plugin = pluginName;
         data.memo = memo;
         data.id = id;
@@ -108,7 +108,6 @@ public class MoneyPoolObject {
                 }
                 rs.close();
                 mysql.close();
-                Bukkit.broadcastMessage(String.valueOf(i));
                 if (i <= 0) {
                     long res = createNewMoneyPool(pId, moneyPoolTerm, moneyPoolType, true, wiredUuid, Bukkit.getOfflinePlayer(wiredUuid).getName(), pluginName, memo);
                     getMoneyPoolObject(res);
@@ -124,49 +123,54 @@ public class MoneyPoolObject {
     public MoneyPoolObject(String pluginName, long id) {
         mysql = new MySQLAPI((JavaPlugin) Bukkit.getPluginManager().getPlugin("Man10VaultAPIPlus"), "Man10VaultAPI");
         vault = new Man10VaultAPI(pluginName);
-        ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
-        try {
-            int i = 0;
-            if(count.next()){
-                i = count.getInt("count(*)");
-            }
-            count.close();
-            mysql.close();
-            if(i  <= 0){
-                data.available = false;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if(data.available){
-            ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
+        if(manager.get(id) == null){
+            ResultSet count = mysql.query("SELECT count(*) FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
             try {
-                if(rs == null){
-                    data.available = false;
-                    mysql.close();
-                }else{
-                    while (rs.next()) {
-                        data.id = rs.getLong("id");
-                        data.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
-                        data.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
-                        try{
-                            data.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
-                        }catch(IllegalArgumentException e){
-                        }
-                        data.wiredName = rs.getString("wired_name");
-
-                        data.value = rs.getDouble("balance");
-                        data.plugin = rs.getString("plugin");
-                        data.pId = rs.getLong("plugin_id");
-                        data.memo = rs.getString("memo");
-                        data.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
-                    }
-                    rs.close();
-                    mysql.close();
+                int i = 0;
+                if (count.next()) {
+                    i = count.getInt("count(*)");
                 }
-            } catch (SQLException | NullPointerException e) {
-                data.available = false;
+                count.close();
+                mysql.close();
+                if (i <= 0) {
+                    data.available = false;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+            if (data.available) {
+                ResultSet rs = mysql.query("SELECT * FROM man10_moneypool WHERE id = '" + id + "' LIMIT 1");
+                try {
+                    if (rs == null) {
+                        data.available = false;
+                        mysql.close();
+                    } else {
+                        while (rs.next()) {
+                            data.id = rs.getLong("id");
+                            data.term = MoneyPoolTerm.valueOf(rs.getString("pool_term"));
+                            data.wired = mysql.convertMysqlToBoolean(rs.getInt("wired"));
+                            try {
+                                data.wiredUuid = UUID.fromString(rs.getString("wired_uuid"));
+                            } catch (IllegalArgumentException e) {
+                            }
+                            data.wiredName = rs.getString("wired_name");
+
+                            data.balance = rs.getDouble("balance");
+                            data.plugin = rs.getString("plugin");
+                            data.pId = rs.getLong("plugin_id");
+                            data.memo = rs.getString("memo");
+                            data.frozen = mysql.convertMysqlToBoolean(rs.getInt("frozen"));
+                        }
+                        rs.close();
+                        mysql.close();
+                    }
+                } catch (SQLException | NullPointerException e) {
+                    data.available = false;
+                }
+                manager.put(id, data);
+            }
+        }else{
+            this.data = manager.get(id);
         }
     }
 
@@ -218,7 +222,7 @@ public class MoneyPoolObject {
                         }
                         data.wiredName = rs.getString("wired_name");
 
-                        data.value = rs.getDouble("balance");
+                        data.balance = rs.getDouble("balance");
                         data.plugin = rs.getString("plugin");
                         data.pId = rs.getLong("plugin_id");
                         data.memo = rs.getString("memo");
@@ -244,7 +248,7 @@ public class MoneyPoolObject {
         if(data.frozen){
             return -3;
         }
-        return vault.transferMoneyPoolToPlayer(data.id, data.wiredUuid, data.value, transactionCategory, transactionType, memo);
+        return vault.transferMoneyPoolToPlayer(data.id, data.wiredUuid, data.balance, transactionCategory, transactionType, memo);
     }
 
     public int transferBalanceToPlayer(UUID toUUID, double value, TransactionCategory transactionCategory, TransactionType transactionType, String memo){
@@ -314,7 +318,7 @@ public class MoneyPoolObject {
     }
 
     public void sendRemainderToCountry(String memo){
-        vault.transferMoneyPoolToCountry(getId(), getBalance(), TransactionCategory.TAX, TransactionType.PAY, memo);
+        vault.transferMoneyPoolToPool(getId(), 1, manager.get(data.id).balance, TransactionCategory.TAX, TransactionType.PAY, memo);
     }
 
 

@@ -32,17 +32,27 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
 
             @Override
             public void run() {
+                if(MoneyPoolManager.lastChanges.size() == 0 && MoneyPoolManager.changesMade.size() == 0){
+                    return;
+                }
                 Runnable r = () -> {
+                    for(Long l: MoneyPoolManager.lastChanges.keySet()){
+                        if(manager.get(l).balance != MoneyPoolManager.lastChanges.get(l)){
+                            MoneyPoolManager.changesMade.put(l, true);
+                        }
+                    }
+                    MoneyPoolManager.lastChanges.clear();
                     Set<Long> keys = MoneyPoolManager.changesMade.keySet();
                     for(Long l : keys){
                         mysql.executeThread("UPDATE man10_moneypool SET balance ='" + manager.get(l).balance + "' WHERE id ='" + manager.get(l).id + "'");
+                        MoneyPoolManager.lastChanges.put(l, manager.get(l).balance);
                         MoneyPoolManager.changesMade.remove(l);
                     }
                 };
                 Thread t = new Thread(r);
                 t.start();
             }
-        }.runTaskTimer(this, 1200, 1200);
+        }.runTaskTimer(this, 200, 200);
     }
 
     @Override

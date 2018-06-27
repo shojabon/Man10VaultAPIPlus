@@ -13,7 +13,6 @@ class MoneyPoolData {
     UUID wiredUuid;
     String wiredName;
 
-    double value;
     String plugin;
     long pId;
     String memo;

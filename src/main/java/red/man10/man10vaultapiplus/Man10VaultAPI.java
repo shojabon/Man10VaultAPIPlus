@@ -385,6 +385,10 @@ public class Man10VaultAPI {
         return takeMoneyPoolMoney(fromPoolId, mpo.getBalance(), transactionType, memo);
     }
 
+    public double getPoolBalance(long poolId){
+        return manager.get(poolId).balance;
+    }
+
 
     /////////////////////
     //    country
