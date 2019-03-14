@@ -369,9 +369,9 @@ public class Man10VaultAPI {
             return -1;
         }
         double toOldBalance = to.getBalance();
-        manager.get(toPoolId).balance = to.getBalance() - value;
+        manager.get(toPoolId).balance = to.getBalance() + value;
         MoneyPoolManager.changesMade.put(toPoolId, true);
-        double toNewBalance = toOldBalance - value;
+        double toNewBalance = toOldBalance + value;
         int a = createTransactionLog(TransactionCategory.VOID, transactionType, this.pluginName, value, "||VOID||", null, to.getName() + to.getId(), null, 0,0, toOldBalance, toNewBalance, to.getId(), TransactionLogType.BOTH, memo);
         return a;
     }
@@ -381,8 +381,20 @@ public class Man10VaultAPI {
         if(!mpo.isAvailable()){
             return -1;
         }
-
         return takeMoneyPoolMoney(fromPoolId, mpo.getBalance(), transactionType, memo);
+    }
+
+    public int setMoneyPool(long fromPoolId, double value, TransactionType transactionType, String memo){
+        MoneyPoolObject mpo = new MoneyPoolObject(this.pluginName, fromPoolId);
+        if(!mpo.isAvailable()){
+            return -1;
+        }
+        return giveMoneyPoolMoney(fromPoolId, value - mpo.getBalance(), transactionType, memo);
+    }
+
+    public boolean ifPoolExists(long poolId){
+        MoneyPoolObject mpo = new MoneyPoolObject(this.pluginName, poolId);
+        return mpo.isAvailable();
     }
 
     public double getPoolBalance(long poolId){

@@ -111,8 +111,111 @@ public final class Man10VaultAPIPlus extends JavaPlugin {
 
     HashMap<UUID, Double>  payComfirm = new HashMap<>();
 
+    public void adminHelp(Player p){
+        p.sendMessage("§b§l/Man10vaultplus value [poolid]");
+        p.sendMessage("§b§l/Man10vaultplus set [poolid] [value]");
+        p.sendMessage("§b§l/Man10vaultplus add [poolid] [value]");
+        p.sendMessage("§b§l/Man10vaultplus take [poolid] [value]");
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(command.getName().equalsIgnoreCase("Man10VaultPlus")){
+            if(sender instanceof Player){
+                Player p = (Player) sender;
+                if(!p.hasPermission("man10vaultplus.admin")){
+                    p.sendMessage("§4§l[Man10VaultAPIPlus]§c権限がありません");
+                    return false;
+                }
+                if(args.length == 2) {
+                    if(args[0].equalsIgnoreCase("value")){
+                        try{
+                            long poolId = Integer.parseInt(args[1]);
+                            if(vault.ifPoolExists(poolId)){
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§a" + vault.getPoolBalance(poolId));
+                                return false;
+                            }else{
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールが存在しません");
+                                return false;
+                            }
+                        }catch (NumberFormatException e){
+                            p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールIDは数字を入力ください");
+                            p.sendMessage("§b§lUsage:/man10vaultplus value [PoolId]");
+                            return false;
+                        }
+                    }else{
+                        adminHelp(p);
+                        return false;
+                    }
+                }else if(args.length == 3){
+                    if(args[0].equalsIgnoreCase("set")){
+                        try{
+                            long poolId = Integer.parseInt(args[1]);
+                            if(vault.ifPoolExists(poolId)){
+                                vault.setMoneyPool(poolId, Double.parseDouble(args[2]), TransactionType.MEMORY_TRANSFER, "Money Pool" + poolId + " Set To" + args[2] + " By " + p.getName());
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§aプール" + poolId + "を" + Double.parseDouble(args[2]) + "にセットしました");
+                                return false;
+                            }else{
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールが存在しません");
+                                return false;
+                            }
+                        }catch (NumberFormatException e){
+                            p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールID, 金額は数字を入力ください");
+                            p.sendMessage("§b§lUsage:/man10vaultplus set [PoolId] [Value]");
+                            return false;
+                        }
+                    }
+                    if(args[0].equalsIgnoreCase("add")){
+                        try{
+                            long poolId = Integer.parseInt(args[1]);
+                            if(vault.ifPoolExists(poolId)){
+                                double value = Double.parseDouble(args[2]);
+                                if(value <= 1){
+                                    p.sendMessage("§4§l[Man10VaultAPIPlus]§c金額は1以上の数字を入力してください");
+                                    return false;
+                                }
+                                vault.giveMoneyPoolMoney(poolId, Double.parseDouble(args[2]), TransactionType.MEMORY_TRANSFER, "Money Pool" + poolId + " Added " + args[2] + " By " + p.getName());
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§aプール" + poolId + "に" + Double.parseDouble(args[2]) + "を追加しました");
+                                return false;
+                            }else{
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールが存在しません");
+                                return false;
+                            }
+                        }catch (NumberFormatException e){
+                            p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールID, 金額は数字を入力ください");
+                            p.sendMessage("§b§lUsage:/man10vaultplus set [PoolId] [Value]");
+                            return false;
+                        }
+                    }
+                    if(args[0].equalsIgnoreCase("take")){
+                        try{
+                            long poolId = Integer.parseInt(args[1]);
+                            if(vault.ifPoolExists(poolId)){
+                                double value = Double.parseDouble(args[2]);
+                                if(value <= 1){
+                                    p.sendMessage("§4§l[Man10VaultAPIPlus]§c金額は1以上の数字を入力してください");
+                                    return false;
+                                }
+                                vault.takeMoneyPoolMoney(poolId, Double.parseDouble(args[2]), TransactionType.MEMORY_TRANSFER, "Money Pool" + poolId + " Set To" + args[2] + " By " + p.getName());
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§aプール" + poolId + "の値を" + Double.parseDouble(args[2]) + "減らしました");
+                                return false;
+                            }else{
+                                p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールが存在しません");
+                                return false;
+                            }
+                        }catch (NumberFormatException e){
+                            p.sendMessage("§4§l[Man10VaultAPIPlus]§cプールID, 金額は数字を入力ください");
+                            p.sendMessage("§b§lUsage:/man10vaultplus set [PoolId] [Value]");
+                            return false;
+                        }
+                    }else{
+                        adminHelp(p);
+                    }
+                }else{
+                    adminHelp(p);
+                }
+            }
+        }
         if(command.getName().equalsIgnoreCase("pay")){
             if(sender instanceof Player){
                 Player p = (Player) sender;

@@ -185,10 +185,7 @@ public class MySQLAPI {
         try {
             Statement st = con.createStatement();
             st.execute(query);
-            st.close();
-            st = null;
-            con.close();
-            con = null;
+            this.close();
         } catch (SQLException var3) {
             ret = false;
         }

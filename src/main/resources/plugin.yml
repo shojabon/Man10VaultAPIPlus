@@ -5,3 +5,4 @@ authors: [Sho0]
 depend: [Essentials, Vault]
 commands:
  pay:
+ man10vaultplus:
